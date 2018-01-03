@@ -10,7 +10,7 @@ The full whitepaper for this project can be found in the wiki. Currently things 
 Dependencies & Installation
 -----------
 
-[Savoir](https://github.com/DXMarkets/Savoir) and [MultiChain](https://github.com/MultiChain/multichain) are required for the code to function. Savoir can be installed using pip:
+[Savoir](https://github.com/DXMarkets/Savoir), [MultiChain](https://github.com/MultiChain/multichain), and [cryptography](https://pypi.python.org/pypi/cryptography) are required for the code to function. Savoir can be installed using pip:
 	
 	pip3 install Savoir
 	
@@ -18,6 +18,10 @@ Requests must also be installed for Savoir to function. It can also be installed
 
 	pip3 install requests	
 	
+Cryptography can be installed with pip as well:
+	
+	pip3 install cryptography
+
 MultiChain can be installed using the [instructions on its website](https://www.multichain.com/download-install/). 
 The 'multichain' folder must be placed within the UniChain root directory.
 
