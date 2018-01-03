@@ -12,11 +12,11 @@ Dependencies & Installation
 
 [Savoir](https://github.com/DXMarkets/Savoir) and [MultiChain](https://github.com/MultiChain/multichain) are required for the code to function. Savoir can be installed using pip:
 	
-	pip install savoir
+	pip3 install Savoir
 	
 Requests must also be installed for Savoir to function. It can also be installed with pip:
 
-	pip install requests	
+	pip3 install requests	
 	
 MultiChain can be installed using the [instructions on its website](https://www.multichain.com/download-install/). 
 The 'multichain' folder must be placed within the UniChain root directory.
