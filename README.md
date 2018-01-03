@@ -5,7 +5,7 @@ Description
 -----------
 
 UniChain is an academic blockchain database project. It aims to create a blockchain solution for storing and accessing academic records. 
-The full whitepaper for this project can be found in the wiki. Currently things are very WIP and a web GUI is still in the works. Python3 is required.
+The full whitepaper for this project is included. Currently things are very WIP and a web GUI is still in the works. Python3 is required.
 
 Dependencies & Installation
 -----------
