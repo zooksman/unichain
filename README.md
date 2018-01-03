@@ -24,4 +24,4 @@ The 'multichain' folder must be placed within the UniChain root directory.
 License
 -----------
 
-This project is distributed under the BSD license. See LICENSE for more information.
+This project is distributed under the BSD license. See [LICENSE](https://github.com/zooksman/unichain/blob/master/LICENSE) for more information.
