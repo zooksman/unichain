@@ -188,7 +188,7 @@ class Course:
 			# Serialize course and publish to blockchain
 			pickledCourse = pickle.dumps(self)
 			print("Publishing course with id " + str(self.courseID) + " and name " + self.name)
-			api.publish("courses", [str(self.courseID), str(self.teacherID)], bytes.decode(binascii.hexlify(pickledCourse)))
+			api.publish("courses", [str(self.courseID), self.name], bytes.decode(binascii.hexlify(pickledCourse)))
 			
 		# If course is already registered:
 		else:
@@ -333,6 +333,8 @@ print("Blacklist: " + str(blacklist))
 # This list is also convenient for displaying the grades which are actually relevant to the user.
 # Finally, it prevents the program from attempting to access any grades belonging to a different user.
 accessibleGrades = {}
+accessibleStudents = {}
+accessibleCourses = {}
 
 # List all access points corresponding to the entered ID number
 accessPoints = api.liststreamkeyitems("access", str(currentID))
@@ -363,6 +365,17 @@ for accessPoint in accessPoints:
 	
 		# Add the grade to the list of all accessible grades
 		accessibleGrades[str(txid)] = grade
+		
+for k, v in accessibleGrades:
+	
+	studentID = v.studentID
+	studentName = api.liststreamkeyitems("pubKeys", str(studentID))[0].get("keys")[1]
+	accessibleStudents[studentID] = studentName
+	
+	courseID = v.courseID
+	pickledCourse = binascii.unhexlify(api.liststreamkeyitems("courses", str(courseID))[0].get("data"))
+	accessibleCourses[courseID] = pickle.loads(pickledCourse)
+
 
 # Edit comments on sample grades
 newtxid1 = edit(newGradeTX1, currentID, comments="Good job!")
