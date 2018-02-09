@@ -10,9 +10,9 @@ The full whitepaper for this project is included. Please read it for more info.
 Dependencies & Installation
 -----------
 
-The latest version of Python 3 must be installed from [Python.org](https://www.python.org/downloads/). The latest version of Git must also be installed from [git-scm](https://git-scm.com/downloads). For both installations, use the default settings on the installers, with the exception of ticking the box for adding Python to your PATH in taht installer.
+The latest version of Python 3 must be installed from [Python.org](https://www.python.org/downloads/). The latest version of Git must also be installed from [git-scm](https://git-scm.com/downloads). For both installations, use the default settings on the installers, with the exception of ticking the box for adding Python to your PATH in that installer.
 
-Run install.py to install the other dependencies.
+Run install.py to install the other dependencies. Once that is done and in the future, always run setup.py to start the program.
 
 License
 -----------
