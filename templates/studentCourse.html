@@ -1,0 +1,50 @@
+{% extends "studentHome.html" %}
+
+{% block title %}
+	<title>Course Details</title>
+{% endblock %}
+
+{% block header %}
+	<h1>Course Details</h1>
+{% endblock %}
+
+{% block body %}
+
+<div style="clear:both">
+<h1 style="float:left">{{course.name}}</h1>
+<h2 style="float:right">Taught by {{course.teacherID|getStudentName}}</h2>
+</div>
+<br>
+<div style="clear:both"><h2>Assignments and graded work</h2></div>
+<br>
+
+{% for category in course.categories.keys() %}
+<div class="table-responsive">
+			<table class="table table-striped">
+			  <thead> <h4>{{category}}: {{((course.categories.get(category) * 100)|round(2)|str) + "%"}} of final grade</h4>
+				<tr>
+				  <th>Name</th>
+				  <th>Date</th>
+				  <th>Score</th>
+				  <th>Grade</th>
+				  <th>Comments</th>
+				</tr>
+			  </thead>
+			  <tbody>
+			    {% for txid, grade in gradeList.items() %}
+			    {% if grade.category == category %}
+				<tr>
+				  <td><a href="/studentGrade/{{txid}}">{{grade.name}}</td>
+				  <td>{{grade.date}}</td>
+				  <td>{{grade.score if grade.score != -1 else ""}}</td>
+				  <td>{{grade.score|calcGrade if grade.score != -1 else ""}}</td>
+				  <td>{{grade.comments}}</td>
+				</tr>
+				{% endif %}
+				{% endfor %}
+			  </tbody>
+			</table>
+		  </div>
+		  <br>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "teacherHome.html" %}
+
+{% block title %}
+	<title>Course Details</title>
+{% endblock %}
+
+{% block header %}
+	<h1>Course Details</h1>
+{% endblock %}
+
+{% block body %}
+
+<div style="clear:both">
+<h1 style="float:left">{{course.name}}</h1>
+<h2 style="float:right">Class Average: {{course.courseID | calcAverage(course.courseID|getCourseGrades)}}</h2>
+</div>
+<br>
+<div style="clear:both"><h2>Students</h2></div>
+<br>
+<div class="table-responsive">
+			<table class="table table-striped">
+			  <thead> 
+				<tr>
+				  <th>Student Name</th>
+				  <th>Current Grade</th>
+				</tr>
+			  </thead>
+			  <tbody>
+			    {% for ID, student in studentList.items() %}
+				<tr>
+				  <td>{{student}}</td>
+				  <td>{{ course.courseID | calcAverage(ID|getStudentGrades) }}</td>
+				</tr>
+				{% endfor %}
+			  </tbody>
+			</table>
+</div>
+<br>
+<h2>Assignments</h2>
+<br>
+{% for category in course.categories.keys() %}
+<div class="table-responsive">
+			<table class="table table-striped">
+				<thead> <h4>{{category}}: {{((course.categories.get(category) * 100)|round(2)|str) + "%"}} of final grade</h4>
+					<tr>
+				  		<th>Name</th>
+				  		<th>Date</th>
+					</tr>
+			  	</thead>
+				<tbody>
+				{% for name, courseID in nameList.items() %}
+				{% for txid, grade in gradeList.items() %}
+				{% if grade.name == name %}
+			    {% if grade.category == category %}
+				
+				<tr>
+					<td>{{grade.name}}</td>
+					<td>{{grade.date}}</td> 
+				</tr>
+				
+				<tr>
+				<td>
+						<div class="table-responsive">
+						<table class="table table-striped">
+			  				<thead>
+								<tr>
+				 					<th>Student Name</th>
+				  					<th>Score</th>
+				  					<th>Grade</th>
+				  					<th>Comments</th>
+								</tr>
+			  				</thead>
+			 		 		<tbody>
+			    				{% for txid, grade in (course.courseID | getNameGrades(grade.name)).items() %}
+								<tr>
+				  					<td><a href="/teacherEdit/{{txid}}">&#9998;</a> {{grade.studentID | getStudentName}}</td>
+				  					<td>{{grade.score if grade.score != -1 else ""}}</td>
+				  					<td>{{grade.score | calcGrade if grade.score != -1 else ""}}</td>
+				  					<td>{{grade.comments}}</td>
+								</tr>
+								{% endfor %}
+			  				</tbody>
+						</table>
+						</div>
+				</td>
+		  		</tr>
+		  		
+				{% endif %}
+				{% break %}
+				{% endif %}
+				{% endfor %}
+				{% endfor %}
+			  	</tbody>
+			</table>
+		  </div>
+{% endfor %}
+{% endblock %}

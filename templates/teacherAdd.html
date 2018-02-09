@@ -1,0 +1,40 @@
+{% extends "teacherHome.html" %}
+
+{% block title %}
+	<title>Add Grade</title>
+{% endblock %}
+
+{% block header %}
+	<h1>Add Grade</h1>
+{% endblock %}
+
+{% block body %}
+
+<form id="add" action="/teacherAdd" method="post">
+	<div><h2>Student Name</h2>
+	<input value='{{ student if student else "" }}' type="text" name="student"></input></div>
+	<br>
+	<div><h2>Grade Name</h2>
+	<input value='{{ grade if grade else "" }}' type="text" name="grade"></input></div>
+	<br>
+	<div><h2>Score</h2>
+	<input value='{{ score if grade.score != -1 and score else "" }}' type="text" name="score"></input></div>
+	<br>
+	<div><h2>Course Name</h2>
+	<input value='{{ course if course else "" }}' type="text" name="course"></input></div>
+	<br>
+	<div><h2>Comments</h2>
+	<textarea form="add" name="comments">{{ comments if comments else "" }}</textarea></div>
+	<br>
+	<div><h2>Date</h2>
+	<input value='{{ date if date else "" }}' type="date" name="date"></input></div>
+	<br>
+	<div><h2>Category</h2>
+	<input value='{{ category if category else "" }}' type="text" name="category"></input></div>
+	<br>
+	<input type="submit" />
+	<br>
+	<p style="color:red; white-space:pre-line">{{ error if error else "" }}</p>
+</form>
+
+{% endblock %}

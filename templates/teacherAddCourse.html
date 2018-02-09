@@ -1,0 +1,31 @@
+{% extends "teacherHome.html" %}
+
+{% block title %}
+	<title>Add Course</title>
+{% endblock %}
+
+{% block header %}
+	<h1>Add Course</h1>
+{% endblock %}
+
+{% block body %}
+
+<form id="add" action="/teacherAddCourse" method="post">
+	<div><h2>Course Name</h2>
+	<input value='{{ course if course else "" }}' type="text" name="course"></input></div>
+	<br>
+	<div><h2>Teacher Name</h2>
+	<input value='{{ teacher if teacher else "" }}' type="text" name="teacher"></input></div>
+	<br>
+	<div><h2>ID Number</h2>
+	<input value='{{ id if id else "" }}' type="text" name="id"></input></div>
+	<br>
+	<div><h2>Categories and Percentage Values (max 5; one category per line, follwed by percentage; Example: "Homework, 20")</h2>
+	<textarea form="add" name="categories">{{ categories if categories else "" }}</textarea></div>
+	<br>
+	<input type="submit" />
+	<br>
+	<p style="color:red; white-space:pre-line">{{ error if error else "" }}</p>
+</form>
+
+{% endblock %}

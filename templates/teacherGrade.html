@@ -1,0 +1,43 @@
+{% extends "teacherHome.html" %}
+
+{% block title %}
+	<title>Assignment Details</title>
+{% endblock %}
+
+{% block header %}
+	<h1>Assignment Details</h1>
+{% endblock %}
+
+{% block body %}
+
+<div style="clear:both">
+<h1 style="float:left">{{grade.name}}</h1>
+<h2 style="float:right">In course <a href="/teacherCourse/{{ grade.courseID }}">{{(grade.courseID|getCourseFromID).name}}</a></h2>
+</div>
+<br>
+			<table class="table table-striped">
+			  <thead> 
+				<tr>
+				  <th>Student Name</th>
+				  <th>Date</th>
+				  <th>Score</th>
+				  <th>Grade</th>
+				  <th>Category</th>
+				  <th>Comments</th>
+				</tr>
+			  </thead>
+			  <tbody>
+			    {% for txid, grade in gradeList.items() %}
+				<tr>
+				  <td><a href="/teacherEdit/{{txid}}">&#9998;</a>{{grade.studentID|getStudentName}}</td>
+				  <td>{{grade.date}}</td>
+				  <td>{{grade.score if grade.score != -1 else ""}}</td>
+				  <td>{{grade.score|calcGrade if grade.score != -1 else ""}}</td>
+				  <td>{{grade.category}}</td>
+				  <td>{{grade.comments}}</td>
+				</tr>
+				{% endfor %}
+			  </tbody>
+			</table>
+
+{% endblock %}

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	
+	{% block title %}
+	<title>Home</title>
+	{% endblock %}
+	
+	<!-- Bootstrap core CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
+	<!-- Custom styles for this template -->
+	<link href="../static/dashboard.css" rel="stylesheet">
+  </head>
+
+  <body>
+	<header>
+	  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+		<a class="navbar-brand" href="#">UniChain</a>
+	  </nav>
+	</header>
+
+	
+		<main role="main" style="margin-left: 20px;">
+		
+		{% block header %}
+		  	<h1>Welcome, {{name}}</h1>
+		{% endblock %}
+
+		
+		{% block body %}
+		  		  
+		  <a href="/teacherAddCourse" class="btn btn-success" style="float: right; margin: 5px;">+Add Course</a><a href="/teacherAdd" class="btn btn-success" style="float: right; margin: 5px;">+Add Grade</a>
+		  
+		  <h2>My Courses</h2>
+		  <div class="table-responsive">
+			<table class="table table-striped">
+			  <thead>
+				<tr>
+				  <th>Name</th>
+				  <th>Class Average</th>
+				</tr>
+			  </thead>
+			  <tbody>
+			    {% for course in courseList.values() %}
+				<tr>
+				  <td><a href="/teacherCourse/{{ course.courseID }}">{{course.name}}</a></td>
+				  <td>{{course.courseID|calcAverage(gradeList)}}</td>
+				</tr>
+				{% endfor %}
+			  </tbody>
+			</table>
+		  </div>
+			<br>
+
+		  <h2>Recent graded assignments</h2>
+		  <div class="table-responsive">
+			<table class="table table-striped">
+			  <thead>
+				<tr>
+				  <th>Name</th>
+				  <th>Class</th>
+				  <th>Date</th>
+				</tr>
+			  </thead>
+			  <tbody>
+			    {% for name, courseID in nameList.items() %}
+			    {% for txid, grade in gradeList.items() %}
+			    {% if grade.name == name %}
+				<tr>
+				  <td><a href="/teacherGrade/{{txid}}">{{name}}</a></td>
+				  <td>{{(courseID|getCourseFromID).name}}</td>
+				  <td>{{grade.date}}</td>
+				</tr>
+				{% break %}
+				{% endif %}
+				{% endfor %}
+				{% endfor %}
+			  </tbody>
+			</table>
+		  </div>
+		  
+		  <h2>Scheduled assignments</h2>
+		  <div class="table-responsive">
+			<table class="table table-striped">
+			  <thead>
+				<tr>
+				  <th>Name</th>
+				  <th>Class</th>
+				  <th>Date</th>
+				</tr>
+			  </thead>
+			  <tbody>
+			    {% for txid, grade in gradeList.items() %}
+			    {% if grade.score == -1 %}
+				<tr>
+				  <td><a href="/teacherGrade/{{txid}}">{{grade.name}}</a></td>
+				  <td>{{(grade.courseID|getCourseFromID).name}}</td>
+				  <td>{{grade.date}}</td>
+				</tr>
+				{% endif %}
+				{% endfor %}
+			  </tbody>
+			</table>
+		  </div>
+
+		  
+		{% endblock %}
+		</main>
+
+	<!-- Bootstrap core JavaScript
+	================================================== -->
+	<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js" integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4" crossorigin="anonymous"></script> 
+ </body>
+</html>

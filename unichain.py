@@ -4,6 +4,8 @@ import datetime
 import pickle as pickle
 import os
 import binascii
+import random
+import pip
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -11,17 +13,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.fernet import Fernet
 
-# Get chain parameters
-chainname = input("Enter the chain name: \n")
-saveFile = open(os.path.join(os.getcwd(), "chains", chainname, "apiparams"))
-
-# Set up calls to Multichain API
-api = Savoir.Savoir(saveFile.readline().strip(),
-					saveFile.readline().strip(),
-					saveFile.readline().strip(),
-					saveFile.readline().strip(),
-					chainname)
-					
 # The Multichain structure is basically as follows:
 # There are five "streams" on the chain which effectively serve as labels.
 # Hexadecimal data can be published to these streams. 
@@ -48,25 +39,18 @@ class Student:
 	name = ""
 	
 	# Constructor
-	def __init__(self, id, name):
+	def __init__(self, id, name, address):
 		self.id = id
 		self.name = name
+		self.address = address
 		
 		# Check if this is the first student being registered
 		firstStudent = False
 		if len(api.liststreamitems("pubKeys")) == 0:
 			firstStudent = True
-			
-		# Check if student is already registered
-		registered = False
-		if firstStudent == False:
-			for student in api.liststreamitems("pubKeys"):
-				if student.get("keys")[0] == str(self.id):
-					registered = True
-					break
 		
 		# If student is not registered:
-		if registered == False:
+		if (not checkStudent(self.id)) or firstStudent:
 		
 			# Generate RSA key pair
 			privKey = rsa.generate_private_key(backend=default_backend(), public_exponent=65537, key_size=2048)
@@ -74,19 +58,28 @@ class Student:
 			pubKeyPEM = pubKey.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
 
 			# Write private key to file
-			file = open("privKeyStudent.txt", "wb+")
+			file = open("privKey.txt", "wb+")
 			file.write(privKey.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()))
 				
-			# Publish student pubkey 
-			api.publish("pubKeys", [str(self.id), self.name], {"text": bytes.decode(pubKeyPEM)})
-			
+			# Publish student pubkey with student ID, name, and Multichain address as identifying keys
+			api.publish("pubKeys", [str(self.id), self.name, self.address], {"text": bytes.decode(pubKeyPEM)})
 			
 		# If student is registered:
 		else:
-			print("Student already registered!")		
+			print("Student already registered!")
+
+# Check if student exists given ID
+def checkStudent(studentID):
+	
+	# Check if a student with that ID exists on the chain	
+	for student in api.liststreamitems("pubKeys"):
+		if student.get("keys")[0] == str(studentID):
+			return True
 			
+	return False					
+
 # The teacher class serves mainly to add a teacher's public key to the pubKeys stream.
-# It generates a private key for the teacher to keep in order to access any grades.
+# It generates a private key for the teacher to keep in order to access or add any grades.
 class Teacher:
 
 	# Variable initialization
@@ -94,25 +87,18 @@ class Teacher:
 	name = ""
 	
 	# Constructor
-	def __init__(self, id, name):
+	def __init__(self, id, name, address):
 		self.id = id
 		self.name = name
+		self.address = address
 		
 		# Check if this is the first teacher being registered
 		firstTeacher = False
 		if len(api.liststreamitems("pubKeys")) == 0:
 			firstTeacher = True
-			
-		# Check if teacher is already registered
-		registered = False
-		if firstTeacher == False:
-			for teacher in api.liststreamitems("pubKeys"):
-				if teacher.get("keys")[0] == str(self.id):
-					registered = True
-					break
-		
+					
 		# If teacher is not registered:
-		if registered == False:
+		if (not checkTeacher(self.id)) or firstTeacher:
 		
 			# Generate RSA key pair
 			privKey = rsa.generate_private_key(backend=default_backend(), public_exponent=65537, key_size=2048)
@@ -120,15 +106,26 @@ class Teacher:
 			pubKeyPEM = pubKey.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
 
 			# Write private key to file
-			file = open("privKeyTeacher.txt", "wb+")
+			file = open("privKey.txt", "wb+")
 			file.write(privKey.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()))
 				
-			# Publish teacher pubkey 
-			api.publish("pubKeys", [str(self.id), self.name], {"text": bytes.decode(pubKeyPEM)})
+			# Publish teacher pubkey with teacher ID, name, and Multichain address as identifying keys
+			print("Publishing teacher with ID " + self.id + " and name " + self.name)
+			api.publish("pubKeys", [str(self.id), self.name, self.address], {"text": bytes.decode(pubKeyPEM)})
 			
 		# If teacher is registered:
 		else:
 			print("Teacher already registered!")		
+
+# Check if teacher exists given ID
+def checkTeacher(teacherID):
+	
+	# Check if a student with that ID exists on the chain	
+	for teacher in api.liststreamitems("pubKeys"):
+		if teacher.get("keys")[0] == str(teacherID):
+			return True
+			
+	return False
 
 # The Grade class models all the data that goes into a grade entry.
 # Objects of this class will be serialized and published to the blockchain.
@@ -181,18 +178,131 @@ class Course:
 				if course.get("keys")[0] == str(self.courseID):
 					registered = True
 					break
+
+		# Check if teacher exists based on given teacher ID
+		if not checkStudent(str(teacherID)):
+			print("Teacher does not exist!")
+			return None
 		
 		# If course is not registered:
-		if registered == False:
+		if (not checkCourse(self.courseID) or firstCourse):
 			
-			# Serialize course and publish to blockchain
+			# Serialize course and publish to blockchain with course ID, name, and teacher ID as identifying keys
 			pickledCourse = pickle.dumps(self)
-			print("Publishing course with id " + str(self.courseID) + " and name " + self.name)
-			api.publish("courses", [str(self.courseID), self.name], bytes.decode(binascii.hexlify(pickledCourse)))
+			print("Publishing course with id " + str(self.courseID) + " and name " + self.name + " and teacher ID " + str(self.teacherID))
+			api.publish("courses", [str(self.courseID), self.name, str(self.teacherID)], bytes.decode(binascii.hexlify(pickledCourse)))
 			
 		# If course is already registered:
 		else:
 			print("Course already registered!")		
+
+# Check if course exists given course ID
+def checkCourse(courseID):
+	
+	for course in api.liststreamitems("courses"):
+		if course.get("keys")[0] == str(courseID):
+			return True
+			
+	return False
+
+# Check if course exists given course name
+def checkCourseFromName(name):
+	for course in api.liststreamitems("courses"):
+		if course.get("keys")[1] == name:
+			return True
+			
+	return False
+	
+# Check if category exists within a given course
+def checkCategory(courseID, category):
+
+	# If course exists:
+	if checkCourse(courseID):
+	
+		# Load course from blockchain
+		course = pickle.loads(binascii.unhexlify(api.liststreamkeyitems("courses", str(courseID))[0].get("data")))
+		
+		# If category exists:
+		if (category in course.categories.keys()):
+			return True
+		else:
+			return False
+			
+	else:
+		return False
+
+# Get student ID given student name
+def getStudentID(name):
+	
+	# If there is a student with given name:
+	if (len(api.liststreamkeyitems("pubKeys", name)) == 1):
+	
+		# Return ID of that student
+		return api.liststreamkeyitems("pubKeys", name)[0].get("keys")[0]
+		
+	else:
+		return None
+
+# Get student name given student ID
+def getStudentName(id):
+	
+	# If there is a student with given ID:
+	if (len(api.liststreamkeyitems("pubKeys", id)) == 1):
+	
+		# Return name of that student
+		return api.liststreamkeyitems("pubKeys", id)[0].get("keys")[1]
+		
+	else:
+		return None
+
+# Get course object given course ID		
+def getCourseFromID(id):
+	
+	# If there is a course with given ID:
+	if (len(api.liststreamkeyitems("courses", str(id))) == 1):
+		
+		# Load and return that course
+		return pickle.loads(binascii.unhexlify(api.liststreamkeyitems("courses", str(id))[0].get("data")))
+		
+	else:
+		return None
+
+# Get course object given course name				
+def getCourseFromName(name):
+
+	# If there is a course with given name:
+	if (len(api.liststreamkeyitems("courses", str(name))) == 1):
+	
+		# Load and return that course
+		return pickle.loads(binascii.unhexlify(api.liststreamkeyitems("courses", str(name))[0].get("data")))
+		
+	else:
+		return None
+
+# Calculate letter grade given a decimal score
+def calcGrade(score):
+	if (score >= .95):
+		return "A+"
+	elif (score >= .875 and score < .95):
+		return "A"
+	elif (score >= .845 and score < .875):
+		return "A-"
+	elif (score >= .815 and score < .845):
+		return "B+"
+	elif (score >= .775 and score < .815):
+		return "B"
+	elif (score >= .745 and score < .775):
+		return "B-"
+	elif (score >= .715 and score < .745):
+		return "C+"
+	elif (score >= .685 and score < .715):
+		return "C"
+	elif (score >= .650 and score < .685):
+		return "C-"
+	elif (score >= .60 and score < .650):
+		return "D"
+	else:
+		return "F"
 	
 # Method to add a new grade
 def addGrade(studentID, name, score, courseID, comments, date, category):
@@ -213,11 +323,11 @@ def addGrade(studentID, name, score, courseID, comments, date, category):
 	txout = api.publish("items", [str(studentID), str(courseID)], bytes.decode(encryptedGradeHex))
 	
 	# Get teacher ID corresponding to this course
-	teacherID = api.liststreamkeyitems("courses", str(courseID))[0].get("keys")[1]
+	teacherID = api.liststreamkeyitems("courses", str(courseID))[0].get("keys")[2]
 		
 	# Retrieve relevant student and teacher's pubkeys from blockchain and deserialize them
 	pubKeyStudentList = api.liststreamkeyitems("pubKeys", str(studentID))
-	pubKeyTeacherList = api.liststreamkeyitems("pubKeys", str(teacherID)) 
+	pubKeyTeacherList = api.liststreamkeyitems("pubKeys", teacherID) 
 	pubKeyStudent = serialization.load_pem_public_key(bytes(pubKeyStudentList[0].get("data").get("text"), "utf-8"), backend=default_backend())
 	pubKeyTeacher = serialization.load_pem_public_key(bytes(pubKeyTeacherList[0].get("data").get("text"), "utf-8"), backend=default_backend())	
 	
@@ -234,20 +344,24 @@ def addGrade(studentID, name, score, courseID, comments, date, category):
 	# Return TXID from publishing of grade
 	return txout
 
-# This method returns a list of grades that match a certain set of parameters
-# Using the double asterisk syntax, it can take any number of key-value pairs as a list of parameters
-# These parameters are designed to correspond to Grade object attributes
+# This method returns a list of grades that match a certain set of parameters.
+# Using the double asterisk syntax, it can take any number of key-value pairs as a list of parameters.
+# These parameters are designed to correspond to Grade object attributes.
 def getGrades(**kwargs):
 
-	# Copy accessibleGrades into new dict
-	gradeList = dict(accessibleGrades)
+	
+	# Copy accessibleGrades into new dictionary
+	gradeList = dict(updateAccessible())
 
 	# Check that list of parameters is not empty
 	if len(kwargs.keys()) > 0:
 	
+		# If a TXID is specified, just return that one specific grade immediately
+		if "txid" in kwargs.keys():
+			return gradeList.get(kwargs.get("txid"))
+	
 		# Iterate over list of supplied parameters
 		for param in kwargs.keys():
-			print(param)
 
 			# Iterate over a copy of gradeList and delete entries if any of their attributes do not equal the supplied parameter values		
 			for txid, grade in gradeList.copy().items():
@@ -255,7 +369,6 @@ def getGrades(**kwargs):
 					del gradeList[txid]
 		
 		# Return result gradeList with deleted entries			
-		print(gradeList)
 		return gradeList	
 			
 	# If list of parameters is empty:
@@ -263,19 +376,75 @@ def getGrades(**kwargs):
 		print("No arguments given!")
 		return None			
 
+# Calculate weighted average for a course given its course ID and a list of grades
+def calcAverage(courseID, gradeList):
+
+	# Initialize variables
+	avg = 0.0
+	addedWeights = 0.0
+	weightList = {}
+	course = getCourseFromID(courseID)	
+	
+	# Iterate over list of grades to build a list of categories in the course
+	for grade in gradeList.values():
+		
+		# If course ID matches supplied ID:
+		if grade.courseID == courseID and grade.score != -1:
+		
+			# If category is not already in list:
+			if grade.category not in weightList.keys():
+			
+				# Add category to list with its name as the key and its weight as the value
+				weightList[grade.category] = course.categories.get(grade.category)
+				
+	# If there are no categories:
+	if len(weightList) == 0:
+		return None
+	
+	# Iterate over list of categories
+	for category, weight in weightList.items():
+	
+		# Initialize counter, which counts the number of grades processed, and totalScore, which tracks the added score of all the grades
+		counter = 0
+		totalScore = 0
+		
+		# Iterate over list of grades
+		for grade in gradeList.values():
+		
+			# If category matches this category and course ID:
+			if grade.category == category and grade.courseID == courseID and grade.score != -1:
+				
+				# Increment counter and total score appropriately
+				counter += 1
+				totalScore += grade.score
+		
+		# Add total average for this category to the global course average (multiplied by weight appropriately)
+		avg += weight * (totalScore / counter)
+	
+	# If the weights do not add up to 100%:
+	if sum(weightList.values()) != 1.0:
+		
+		# Divide average by the sum of the weights
+		avg = avg / sum(weightList.values())
+	
+	# Calculate letter grade from average and return it
+	return calcGrade(avg)
+
 # This method serves to "edit" Grade items on the blockchain.
 # Since the blockchain is not truly editable, this "editing" is more like "replacing".
 # It utilizes the blacklist to mark the transaction being "edited" as no longer valid.
 # It also publishes a new item with the changed values to take the place of the blacklisted one.	
 # Similarly to the getGrades method, it can take any number of key-value pairs as parameters for the values to change.				
-def edit(txid, studentID, **kwargs):
+def edit(txid, **kwargs):
 	
 	# Check if given TXID is in list of accessible grades
 	if str(txid) in accessibleGrades.keys():
 	
+		# Get student ID for specified grade
+		studentID = api.getstreamitem("items", txid).get("keys")[0]
+	
 		# Publish TXID of item being edited to the blacklist stream with student ID as the key
-		print("TXID being blacklisted: " + txid)
-		api.publish("blacklist", str(studentID), str(txid))
+		api.publish("blacklist", str(api.getstreamitem("items", txid).get("keys")[0]), str(txid))
 		
 		# Get grade being edited
 		gradeSource = accessibleGrades.get(str(txid))
@@ -291,98 +460,162 @@ def edit(txid, studentID, **kwargs):
 				setattr(newGrade, param, kwargs.get(param))
 		
 		# Add new grade and return TXID coming out
-		txout = addGrade(studentID, newGrade.name, newGrade.score, newGrade.courseID, newGrade.comments, newGrade.date, newGrade.category)
+		txout = addGrade(str(studentID), newGrade.name, newGrade.score, newGrade.courseID, newGrade.comments, newGrade.date, newGrade.category)
 		return txout
 	
 	# If TXID not found in list of accessible grades:
 	else:
 		print("Grade not found!")
 		return None
-			
-# Ask user for student and teacher IDs and get corresponding private keys
-currentID = input("Enter your ID number. \n")
-newStudent = Student(currentID, "Student Example")
-currentTeacherID = input("Enter the teacher ID number. \n")
-newTeacher = Teacher(currentTeacherID, "Teacher Example") 
-privKeyStudentPath = "privKeyStudent.txt"
-privKeyTeacherPath = "privKeyTeacher.txt"
 
-# Open and load given student private keys
-privKeyStudentFile = open(privKeyStudentPath, "rb")
-privKeyStudentPEM = privKeyStudentFile.read()
-privKeyStudent = serialization.load_pem_private_key(privKeyStudentPEM, password=None, backend=default_backend())
-
-# Open and load given student private keys
-privKeyTeacherFile = open(privKeyTeacherPath, "rb")
-privKeyTeacherPEM = privKeyTeacherFile.read()
-privKeyTeacher = serialization.load_pem_private_key(privKeyTeacherPEM, password=None, backend=default_backend())
-
-# Add a sample course and some grades
-physics = Course("Physics", 1111, 401, {"Homework" : .25, "Quizzes" : .25, "Tests" : .50})
-newGradeTX1 = addGrade(currentID, "Homework 1", .95, 401, "Comment 1", datetime.date(2018, 1, 1), "Homework")
-newGradeTX2 = addGrade(currentID, "Quiz 1", .86, 401, "Comment 2", datetime.date(2018, 1, 2), "Quizzes")
-	
-# Create list of blacklisted TXIDs from blockchain
-blacklist = []
-for item in api.liststreamkeyitems("blacklist", str(currentID)):
-	blacklist.append(item.get("data"))
-print("Blacklist: " + str(blacklist))
-
-# This next section of code generates a list of all grades that are accessible by the entered student ID.
-# By generating this list at startup, interactions become much faster since no data is being read live from the blockchain.
+# This method generates a list of all grades, courses, and students (in the case of a teacher) that are accessible by the entered student ID.
+# By generating this list at startup and periodically refreshing it, interactions become much faster since no data is being read live from the blockchain.
 # This list is also convenient for displaying the grades which are actually relevant to the user.
-# Finally, it prevents the program from attempting to access any grades belonging to a different user.
+# Finally, it prevents the program from attempting to access any grades belonging to a different user.		
+def updateAccessible():
+	
+	# Create list of blacklisted TXIDs from blockchain
+	blacklist = []
+	for item in api.liststreamkeyitems("blacklist", str(currentID)):
+		blacklist.append(item.get("data"))
+
+	# List all access points corresponding to the entered ID number
+	accessPoints = api.liststreamkeyitems("access", str(currentID))
+	
+	# Clear out old lists
+	accessibleGrades.clear()
+	accessibleCourses.clear()
+	accessibleStudents.clear()
+	
+	# Iterate over list of access points
+	for accessPoint in accessPoints:
+	
+		# Get TXID of corresponding item for current access point
+		txid = accessPoint.get("keys")[1]
+	
+		# Check if TXID is in the blacklist
+		if str(txid) in blacklist:
+			pass
+		
+		# If TXID is not in blacklist, add grade to list of accessible grades
+		else:
+		
+			# Decrypt secret passphrase with entered private key
+			secret = privKey.decrypt(binascii.unhexlify(accessPoint.get("data")), padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+			fernet = Fernet(secret)
+	
+			# Get, decrypt, and deserialize the grade with the TXID listed in the access point
+			encryptedGradeHex = api.getstreamitem("items", txid).get("data")
+			encryptedGrade = binascii.unhexlify(encryptedGradeHex)
+			pickledGrade = fernet.decrypt(encryptedGrade)
+			grade = pickle.loads(pickledGrade)
+	
+			# Add the grade to the list of all accessible grades
+			accessibleGrades[str(txid)] = grade
+
+	# If the user is a teacher, use their current ID to list all of their taught courses
+	courseList = []
+	if teacher:
+		courseList = api.liststreamkeyitems("courses", currentID)
+	
+	# Iterate over list of accessible grades
+	for v in accessibleGrades.values():
+	
+		# Get grade's student ID, get name from that ID, and append result to list of accessible students
+		studentID = v.studentID
+		studentName = api.liststreamkeyitems("pubKeys", str(studentID))[0].get("keys")[1]
+		accessibleStudents[studentID] = studentName
+		
+		# For students, since they have no teacher ID, their course list is generated by collecting course IDs from list of accessible grades:
+		courseList.append(api.liststreamkeyitems("courses", str(v.courseID))[0])
+	
+	# Iterate over course list
+	for course in courseList:
+	
+		# Load course object and add it to list of accessible courses
+		courseObj = pickle.loads(binascii.unhexlify(course.get("data")))	
+		accessibleCourses[courseObj.courseID] = courseObj				
+	
+	return accessibleGrades
+
+# This next section of code runs every time the web interface starts up.
+			
+# Get chain parameters
+chainname = input("Enter the chain name: \n")
+saveFile = open(os.path.join(os.getcwd(), "chains", chainname, "apiparams"))
+
+# Set up calls to Multichain API
+api = Savoir.Savoir(saveFile.readline().strip(),
+					saveFile.readline().strip(),
+					saveFile.readline().strip(),
+					saveFile.readline().strip(),
+					chainname)
+					
+# Ensure that the current address is always updating the five streams by subscribing
+api.subscribe("pubKeys")
+api.subscribe("items")
+api.subscribe("access")
+api.subscribe("courses")
+api.subscribe("blacklist")
+
+# Initialize variables
+teacher = False
+myAdd = ""
+currentID = 0
+registered = False
+
+# Get address of current user
+for address in api.listaddresses():
+	if address.get("ismine") == True:
+		myAdd = address.get("address")	
+
+# Check permissions of address; if the issue permission is granted, then this address is a teacher
+for address in api.listpermissions("issue"):
+	if address.get("address") == myAdd:
+		teacher = True
+
+# Check if current user is registered by searching for their address in the pubKeys stream
+for item in api.liststreamitems("pubKeys"):
+	if myAdd == item.get("keys")[2]:
+		currentID = item.get("keys")[0]
+		registered = True
+
+# If the user has not yet been registered:
+if not registered:
+
+	# Ask for name
+	name = input("Enter your first and last name.\n")
+	
+	# Generate random unique id for the user
+	unique = False
+	while not unique:
+		randID = random.randint(1,1000)
+		if not checkStudent(randID):
+			unique = True
+	
+	# Publish student to blockchain and generate private key file
+	currentID = str(randID)
+	print("Your ID number is " + str(currentID))
+	print("Generating private key...")
+	currentStudent = Student(currentID, name, myAdd)
+	print("A private key has been generated in 'privKey.txt' inside of this directory.")
+	print("Do NOT lose this file. It is essentially your password for accessing the gradebook.")
+	privKey = serialization.load_pem_private_key(open("privKey.txt", "rb").read(), password=None, backend=default_backend())
+
+# If the user is already registered:		
+else:
+
+	# Ask for student/teacher ID and private key of user
+	currentID = input("Please enter your ID number.\n")
+	pubKey = serialization.load_pem_public_key(bytes(api.liststreamkeyitems("pubKeys", str(currentID))[0].get("data").get("text"), "utf-8"), backend=default_backend())
+	path = input("Please enter the path to your private key.\n")
+	privPEM = open(path, "rb").read()
+	privKey = serialization.load_pem_private_key(privPEM, password=None, backend=default_backend())
+	
+# Initialize lists of accessible grades, courses, and students
 accessibleGrades = {}
-accessibleStudents = {}
 accessibleCourses = {}
+accessibleStudents = {}
 
-# List all access points corresponding to the entered ID number
-accessPoints = api.liststreamkeyitems("access", str(currentID))
-print("Generating grade list...")
-
-# Iterate over list of access points
-for accessPoint in accessPoints:
-	
-	# Get TXID of corresponding item for current access point
-	txid = accessPoint.get("keys")[1]
-	
-	# Check if TXID is in the blacklist
-	if str(txid) in blacklist:
-		print("Found blacklisted item with txid " + txid)
-		
-	# If TXID is not in blacklist, add grade to list of accessible grades
-	else:
-	
-		# Decrypt secret passphrase with entered private key
-		secret = privKeyStudent.decrypt(binascii.unhexlify(accessPoint.get("data")), padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
-		fernet = Fernet(secret)
-	
-		# Get, decrypt, and deserialize the grade with the TXID listed in the access point
-		encryptedGradeHex = api.getstreamitem("items", txid).get("data")
-		encryptedGrade = binascii.unhexlify(encryptedGradeHex)
-		pickledGrade = fernet.decrypt(encryptedGrade)
-		grade = pickle.loads(pickledGrade)
-	
-		# Add the grade to the list of all accessible grades
-		accessibleGrades[str(txid)] = grade
-		
-for k, v in accessibleGrades:
-	
-	studentID = v.studentID
-	studentName = api.liststreamkeyitems("pubKeys", str(studentID))[0].get("keys")[1]
-	accessibleStudents[studentID] = studentName
-	
-	courseID = v.courseID
-	pickledCourse = binascii.unhexlify(api.liststreamkeyitems("courses", str(courseID))[0].get("data"))
-	accessibleCourses[courseID] = pickle.loads(pickledCourse)
-
-
-# Edit comments on sample grades
-newtxid1 = edit(newGradeTX1, currentID, comments="Good job!")
-newtxid2 = edit(newGradeTX2, currentID, comments="Great job!!!")
-
-# Print comments for sample grades (will not update after edit until next run)
-gradeResult1 = getGrades(studentID=currentID, name="Homework 1", courseID=401)
-gradeResult2 = getGrades(studentID=currentID, name="Quiz 1", courseID=401)
-print(gradeResult1.get(list(gradeResult1.keys())[0]).comments)
-print(gradeResult2.get(list(gradeResult2.keys())[0]).comments)
+# Update those lists (see method for more information)
+updateAccessible()

@@ -1,0 +1,40 @@
+{% extends "teacherHome.html" %}
+
+{% block title %}
+	<title>Edit Grade</title>
+{% endblock %}
+
+{% block header %}
+	<h1>Edit Grade</h1>
+{% endblock %}
+
+{% block body %}
+
+<form id="edit" action="/teacherEdit/{{txid}}" method="post">
+	<div><h2>Student Name</h2>
+	<input value='{{ grade.studentID | getStudentName }}' type="text" name="student"></input></div>
+	<br>
+	<div><h2>Grade Name</h2>
+	<input value='{{ grade.name }}' type="text" name="name"></input></div>
+	<br>
+	<div><h2>Score</h2>
+	<input value='{{ grade.score if (grade.score != -1) else "" }}' type="text" name="score"></input></div>
+	<br>
+	<div><h2>Course Name</h2>
+	<input value='{{ (grade.courseID | getCourseFromID).name }}' type="text" name="course"></input></div>
+	<br>
+	<div><h2>Comments</h2>
+	<textarea form="edit" name="comments">{{ grade.comments }}</textarea></div>
+	<br>
+	<div><h2>Date</h2>
+	<input value='{{ grade.date }}' type="date" name="date"></input></div>
+	<br>
+	<div><h2>Category</h2>
+	<input value='{{ grade.category }}' type="text" name="category"></input></div>
+	<br>
+	<input type="submit" />
+	<br>
+	<p style="color:red; white-space:pre-line">{{ error if error else "" }}</p>
+</form>
+
+{% endblock %}

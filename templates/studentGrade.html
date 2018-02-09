@@ -1,0 +1,40 @@
+{% extends "studentHome.html" %}
+
+{% block title %}
+	<title>Assignment Details</title>
+{% endblock %}
+
+{% block header %}
+	<h1>Assignment Details</h1>
+{% endblock %}
+
+{% block body %}
+
+<div style="clear:both">
+<h1 style="float:left">{{grade.name}}</h1>
+<h2 style="float:right">In course <a href="/studentCourse/{{ grade.courseID }}">{{(grade.courseID|getCourseFromID).name}}</a></h2>
+</div>
+<br>
+
+<table class="table table-striped">
+	<thead> 
+		<tr>
+			<th>Date</th>
+			<th>Score</th>
+			<th>Grade</th>
+			<th>Category</th>
+			<th>Comments</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>{{grade.date}}</td>
+			<td>{{grade.score if grade.score != -1 else ""}}</td>
+			<td>{{grade.score|calcGrade if grade.score != -1 else ""}}</td>
+			<td>{{grade.category}}</td>
+			<td>{{grade.comments}}</td>
+		</tr>
+	</tbody>
+</table>
+
+{% endblock %}
