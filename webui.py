@@ -9,14 +9,6 @@ from unichain import Teacher
 import unichain
 import webbrowser
 
-# Link to Unichain getCourse method
-# def getCourse(id):
-# 	return unichain.getCourse(id)
-# 
-# Link to Unichain getCourse method
-# def getCourse(name):
-# 	return unichain.getCourse(name)
-
 # Given a specifically formatted string, parse it to create a list of categories and weights for a course
 def parseCategories(input):
 
@@ -227,11 +219,11 @@ class teacherAdd:
 			data["score"] = -1
 	
 		# Check if course with that name exists
-		if data.get("course") == "" or not (unichain.checkCourse(unichain.getCourseFromName(data.get("course")).courseID)):
+		if data.get("course") == "" or not (unichain.checkCourse(unichain.getCourseIDFromName(data.get("course")))):
 			error += "\nCourse not found!"		
 			
 		# Check if category exists within given course
-		if data.get("category") == "" or not (unichain.checkCategory(unichain.getCourseFromName(data.get("course")).courseID, data.get("category"))):
+		if data.get("category") == "" or not (unichain.checkCategory(unichain.getCourseIDFromName(data.get("course")), data.get("category"))):
 			error += "\nCategory not found in specified course!"
 			print("\nCategory not found in specified course!")
 		
@@ -322,12 +314,12 @@ class teacherEdit:
 			data["score"] = -1
 		
 		# Check if course with that name exists
-		if data.get("course") == "" or not (unichain.checkCourse(unichain.getCourseFromName(data.get("course")).courseID)):
+		if data.get("course") == "" or not (unichain.checkCourse(unichain.getCourseIDFromName(data.get("course")))):
 			error += "\nCourse not found!"		
 			print("\nCourse not found!")
 		
 		# Check if category with given name exists within specified course
-		if data.get("category") == "" or not (unichain.checkCategory(unichain.getCourseFromName(data.get("course")).courseID, data.get("category"))):
+		if data.get("category") == "" or not (unichain.checkCategory(unichain.getCourseIDFromName(data.get("course")), data.get("category"))):
 			error += "\nCategory not found in specified course!"
 			print("\nCategory not found in specified course!")
 			

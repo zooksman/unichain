@@ -278,6 +278,17 @@ def getCourseFromName(name):
 		
 	else:
 		return None
+		
+def getCourseIDFromName(name):
+
+	# If there is a course with given name:
+	if (len(api.liststreamkeyitems("courses", str(name))) == 1):
+	
+		# Load and return that course's ID'
+		return pickle.loads(binascii.unhexlify(api.liststreamkeyitems("courses", str(name))[0].get("data"))).courseID
+		
+	else:
+		return None
 
 # Calculate letter grade given a decimal score
 def calcGrade(score):
@@ -476,7 +487,7 @@ def updateAccessible():
 	
 	# Create list of blacklisted TXIDs from blockchain
 	blacklist = []
-	for item in api.liststreamkeyitems("blacklist", str(currentID)):
+	for item in api.liststreamitems("blacklist"):
 		blacklist.append(item.get("data"))
 
 	# List all access points corresponding to the entered ID number

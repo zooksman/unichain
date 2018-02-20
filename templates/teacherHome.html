@@ -19,7 +19,7 @@
   <body>
 	<header>
 	  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-		<a class="navbar-brand" href="#">UniChain</a>
+		<a class="navbar-brand" href="/teacherHome">UniChain</a>
 	  </nav>
 	</header>
 
@@ -69,7 +69,7 @@
 			  <tbody>
 			    {% for name, courseID in nameList.items() %}
 			    {% for txid, grade in gradeList.items() %}
-			    {% if grade.name == name %}
+			    {% if grade.name == name and grade.score != -1 %}
 				<tr>
 				  <td><a href="/teacherGrade/{{txid}}">{{name}}</a></td>
 				  <td>{{(courseID|getCourseFromID).name}}</td>

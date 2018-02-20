@@ -18,7 +18,7 @@
 	<input value='{{ grade if grade else "" }}' type="text" name="grade"></input></div>
 	<br>
 	<div><h2>Score</h2>
-	<input value='{{ score if grade.score != -1 and score else "" }}' type="text" name="score"></input></div>
+	<input value='{{ score if grade and grade.score != -1 and score else "" }}' type="text" name="score"></input></div>
 	<br>
 	<div><h2>Course Name</h2>
 	<input value='{{ course if course else "" }}' type="text" name="course"></input></div>
